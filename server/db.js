@@ -98,12 +98,41 @@ const createMessage = (senderId, recipientId, content) => {
     recipientId,
     content,
     timestamp: new Date(),
-    // TODO: Add status for read receipts (sent, delivered, read)
+    status: 'sent', // Initial status
   };
   messages.push(newMessage);
   console.log(`Message created from ${senderId} to ${recipientId}`);
   return newMessage;
 };
+
+/**
+ * Updates the status of a specific message.
+ * @param {string} messageId - The ID of the message to update.
+ * @param {string} status - The new status ('delivered' or 'read').
+ */
+const updateMessageStatus = (messageId, status) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+        // Don't downgrade status (e.g., from read to delivered)
+        if (message.status === 'read' && status === 'delivered') return;
+        message.status = status;
+        console.log(`Updated message ${messageId} to status ${status}`);
+    }
+};
+
+/**
+ * Finds all messages sent by a specific user to another user that are not yet read.
+ * @param {string} senderId - The ID of the message sender.
+ * @param {string} recipientId - The ID of the message recipient (the one who is reading).
+ * @returns {array} An array of unread message objects.
+ */
+const findUnreadMessages = (senderId, recipientId) => {
+    return messages.filter(m =>
+        m.senderId === senderId &&
+        m.recipientId === recipientId &&
+        m.status !== 'read'
+    );
+}
 
 module.exports = {
   findOrCreateUser,
@@ -113,4 +142,6 @@ module.exports = {
   removeConnection,
   getConnection,
   createMessage,
+  updateMessageStatus,
+  findUnreadMessages,
 };
