@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: whatsapp_clone_db
+    restart: always
+    environment:
+      - POSTGRES_USER=jules
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=whatsapp_clone
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: whatsapp_clone_server
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - '8080:8080'
+    environment:
+      - DATABASE_URL=postgresql://jules:password@db:5432/whatsapp_clone
+
+volumes:
+  postgres_data:

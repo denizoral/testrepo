@@ -28,7 +28,9 @@ function ChatView({ user, messages, onSendMessage, currentUser }) {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundImage: theme.palette.background.chat }}>
       <AppBar position="static" color="transparent" elevation={0}>
         <Toolbar>
-          <Avatar sx={{ mr: 2 }}>{user.username.charAt(0).toUpperCase()}</Avatar>
+          <Avatar sx={{ mr: 2 }} src={user.profilePictureUrl}>
+            {user.username.charAt(0).toUpperCase()}
+          </Avatar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>{user.username}</Typography>
           <IconButton><MoreVertIcon /></IconButton>
         </Toolbar>
@@ -44,7 +46,7 @@ function ChatView({ user, messages, onSendMessage, currentUser }) {
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: msg.from === currentUser.userId ? 'flex-end' : 'flex-start',
+                justifyContent: msg.senderId === currentUser.id ? 'flex-end' : 'flex-start',
                 mb: 1,
               }}
             >
@@ -53,14 +55,14 @@ function ChatView({ user, messages, onSendMessage, currentUser }) {
                 sx={{
                   p: '10px 15px',
                   borderRadius: '20px',
-                  backgroundColor: msg.from === currentUser.userId ? theme.palette.primary.main : theme.palette.background.paper,
-                  color: msg.from === currentUser.userId ? '#fff' : theme.palette.text.primary,
+                  backgroundColor: msg.senderId === currentUser.id ? theme.palette.primary.main : theme.palette.background.paper,
+                  color: msg.senderId === currentUser.id ? '#fff' : theme.palette.text.primary,
                   maxWidth: '60%',
                 }}
               >
                 <Typography variant="body1">{msg.content}</Typography>
-                <Typography variant="caption" sx={{ display: 'block', textAlign: 'right', color: msg.from === currentUser.userId ? '#eee' : 'grey.500' }}>
-                  {msg.timestamp}
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'right', color: msg.senderId === currentUser.id ? '#eee' : 'grey.500' }}>
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </Typography>
               </Paper>
             </Box>
