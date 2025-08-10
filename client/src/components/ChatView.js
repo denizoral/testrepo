@@ -1,14 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Paper, Typography, TextField, Box, AppBar, Toolbar, Avatar, IconButton, useTheme } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { motion } from 'framer-motion';
 
-const socket = new WebSocket('ws://localhost:8080');
-
-function ChatView({ username }) {
-  const [messages, setMessages] = useState([]);
+function ChatView({ user, messages, onSendMessage, currentUser }) {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef(null);
   const theme = useTheme();
@@ -18,35 +14,22 @@ function ChatView({ username }) {
   }
 
   useEffect(() => {
-    socket.onmessage = (event) => {
-      setMessages((prevMessages) => [...prevMessages, JSON.parse(event.data)]);
-    };
-    return () => socket.onmessage = null;
-  }, []);
-
-  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = () => {
+  const handleSendMessage = () => {
     if (newMessage.trim()) {
-      const message = {
-        username,
-        content: newMessage,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      socket.send(JSON.stringify(message));
-      setMessages((prevMessages) => [...prevMessages, message]);
+      onSendMessage(newMessage);
       setNewMessage('');
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundImage: theme.palette.background.chat, backgroundColor: theme.palette.background.default }}>
-      <AppBar position="static" color="default" elevation={0} sx={{ borderBottom: '1px solid #ddd' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundImage: theme.palette.background.chat }}>
+      <AppBar position="static" color="transparent" elevation={0}>
         <Toolbar>
-          <Avatar sx={{ mr: 2 }}>J</Avatar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>John Doe</Typography>
+          <Avatar sx={{ mr: 2 }}>{user.username.charAt(0).toUpperCase()}</Avatar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>{user.username}</Typography>
           <IconButton><MoreVertIcon /></IconButton>
         </Toolbar>
       </AppBar>
@@ -58,25 +41,25 @@ function ChatView({ username }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Box 
+            <Box
               sx={{
                 display: 'flex',
-                justifyContent: msg.username === username ? 'flex-end' : 'flex-start',
+                justifyContent: msg.from === currentUser.userId ? 'flex-end' : 'flex-start',
                 mb: 1,
               }}
             >
-              <Paper 
-                elevation={1} 
+              <Paper
+                elevation={1}
                 sx={{
                   p: '10px 15px',
-                  borderRadius: '10px',
-                  backgroundColor: msg.username === username ? theme.palette.primary.main : theme.palette.background.paper,
-                  color: msg.username === username ? '#fff' : theme.palette.text.primary,
+                  borderRadius: '20px',
+                  backgroundColor: msg.from === currentUser.userId ? theme.palette.primary.main : theme.palette.background.paper,
+                  color: msg.from === currentUser.userId ? '#fff' : theme.palette.text.primary,
                   maxWidth: '60%',
                 }}
               >
                 <Typography variant="body1">{msg.content}</Typography>
-                <Typography variant="caption" sx={{ display: 'block', textAlign: 'right', color: msg.username === username ? '#eee' : 'grey.500' }}>
+                <Typography variant="caption" sx={{ display: 'block', textAlign: 'right', color: msg.from === currentUser.userId ? '#eee' : 'grey.500' }}>
                   {msg.timestamp}
                 </Typography>
               </Paper>
@@ -85,8 +68,8 @@ function ChatView({ username }) {
         ))}
         <div ref={messagesEndRef} />
       </Box>
-      <Box sx={{ p: 2, backgroundColor: 'background.paper' }}>
-        <Paper component="form" sx={{ display: 'flex', alignItems: 'center', borderRadius: '20px', p: '2px 4px' }} onSubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+      <Box sx={{ p: 2 }}>
+        <Paper component="form" sx={{ display: 'flex', alignItems: 'center', borderRadius: '20px', p: '2px 4px' }} onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
           <TextField
             fullWidth
             variant="standard"
