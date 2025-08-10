@@ -9,7 +9,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [userId, setUserId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState({});
@@ -21,14 +21,17 @@ function App() {
     if (loggedIn) {
       socket.current = new WebSocket('ws://localhost:8080');
 
+      socket.current.onopen = () => {
+        console.log('WebSocket connected, sending login...');
+        socket.current.send(JSON.stringify({ type: 'login', username }));
+      };
+
       socket.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log('Received message from server:', data);
         switch (data.type) {
           case 'welcome':
-            setUserId(data.userId);
-            console.log('Sending login message for', username);
-            socket.current.send(JSON.stringify({ type: 'login', username }));
+            setCurrentUser(data.user);
             break;
           case 'updateUserList':
             setUsers(data.users);
@@ -36,7 +39,7 @@ function App() {
           case 'message':
             setMessages(prevMessages => ({
               ...prevMessages,
-              [data.from]: [...(prevMessages[data.from] || []), data],
+              [data.senderId]: [...(prevMessages[data.senderId] || []), data],
             }));
             break;
           default:
@@ -64,18 +67,26 @@ function App() {
   };
 
   const sendMessage = (content) => {
-    if (selectedUser && content.trim()) {
+    if (selectedUser && content.trim() && currentUser) {
       const message = {
         type: 'message',
-        to: selectedUser.userId,
+        to: selectedUser.id,
         content,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date(), // Use full date object
       };
       console.log('Sending message:', message);
       socket.current.send(JSON.stringify(message));
+
+      const messageToStore = {
+        ...message,
+        id: new Date().getTime(), // temp id
+        senderId: currentUser.id,
+        recipientId: selectedUser.id,
+      }
+
       setMessages(prevMessages => ({
         ...prevMessages,
-        [selectedUser.userId]: [...(prevMessages[selectedUser.userId] || []), { ...message, from: userId }],
+        [selectedUser.id]: [...(prevMessages[selectedUser.id] || []), messageToStore],
       }));
     }
   };
@@ -90,25 +101,25 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ display: 'flex', height: '100vh', background: theme.palette.background.chat }}>
         <CssBaseline />
-        <Box sx={{ width: '30%', borderRight: '1px solid #ddd' }}>
+        <Box sx={{ width: '30%' }}>
           <Sidebar
-            username={username}
+            currentUser={currentUser}
             onThemeChange={handleThemeChange}
             darkMode={darkMode}
-            users={users.filter(u => u.userId !== userId)}
+            users={users.filter(u => u.id !== currentUser?.id)}
             onSelectUser={handleSelectUser}
             selectedUser={selectedUser}
           />
         </Box>
         <Box sx={{ width: '70%' }}>
-          {selectedUser ? (
+          {selectedUser && currentUser ? (
             <ChatView
               user={selectedUser}
-              messages={messages[selectedUser.userId] || []}
+              messages={messages[selectedUser.id] || []}
               onSendMessage={sendMessage}
-              currentUser={{ userId, username }}
+              currentUser={currentUser}
             />
           ) : (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
