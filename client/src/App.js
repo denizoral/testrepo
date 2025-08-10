@@ -87,7 +87,7 @@ function App() {
   const handleSelectUser = (user) => setSelectedUser(user);
 
   const sendMessage = (content) => {
-    if (selectedUser && content.trim() && currentUser) {
+    if (socket.current?.readyState === WebSocket.OPEN && selectedUser && content.trim() && currentUser) {
       const message = { type: 'message', to: selectedUser.id, content, timestamp: new Date() };
       socket.current.send(JSON.stringify(message));
       const messageToStore = { ...message, id: new Date().getTime(), senderId: currentUser.id, recipientId: selectedUser.id, status: 'sent' };
@@ -96,13 +96,15 @@ function App() {
   };
 
   const sendTypingStatus = (isTyping) => {
-    if (selectedUser) {
+    if (socket.current?.readyState === WebSocket.OPEN && selectedUser) {
       socket.current.send(JSON.stringify({ type: 'typing', to: selectedUser.id, isTyping }));
     }
   };
 
   const sendMessagesRead = (senderId) => {
-      socket.current.send(JSON.stringify({ type: 'messages_read', senderId }));
+      if (socket.current?.readyState === WebSocket.OPEN) {
+        socket.current.send(JSON.stringify({ type: 'messages_read', senderId }));
+      }
   }
 
   if (!loggedIn) {
