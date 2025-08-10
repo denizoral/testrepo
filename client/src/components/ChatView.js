@@ -76,7 +76,7 @@ function ChatView({ user, messages, onSendMessage, currentUser, onSendTypingStat
                   borderRadius: '7px',
                   boxShadow: '0 1px 0.5px rgba(0, 0, 0, 0.13)',
                   backgroundColor: msg.senderId === currentUser.id ? theme.palette.message.sent : theme.palette.background.paper,
-                  color: 'text.primary',
+                  color: theme.palette.mode === 'light' ? '#111B21' : '#E9EDEF',
                   maxWidth: '65%',
                 }}
               >
